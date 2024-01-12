@@ -1,0 +1,130 @@
+import {useState,useEffect} from 'react'
+import Cookies from 'js-cookie'
+import { useNavigate } from 'react-router-dom'
+
+import './index.css'
+
+
+const LoginForm =()=> {
+  
+  const [credentials,setCredentials] = useState ({
+    username:'',
+    password:'',
+    showSubmitError:false,
+    errorMsg:''
+  })
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const jwtToken = Cookies.get('jwt_token');
+    if (jwtToken !== undefined) {
+      navigate('/');
+    }
+  }, [navigate]);
+  
+ 
+  // const [password,setPassword] = useState ('')
+
+ const onChangeUsername = event => {
+    setCredentials((prevCredentials)=>({...prevCredentials,username:event.target.value}))
+  }
+
+  const onChangePassword = event => {
+    setCredentials((prevCredentials)=>({...prevCredentials,password:event.target.value}))
+  }
+
+  const renderPasswordField = () => {
+    return (
+      <>
+        <label className="input-label" htmlFor="password">
+          PASSWORD
+        </label>
+        <input
+          type="password"
+          id="password"
+          className="password-input-filed"
+          value={credentials.password}
+          onChange={onChangePassword}
+        />
+      </>
+    )
+  }
+
+  const renderUsernameField = () => {
+    return (
+      <>
+        <label className="input-label" htmlFor="username">
+          USERNAME
+        </label>
+        <input
+          type="text"
+          id="username"
+          className="username-input-filed"
+          value={credentials.username}
+          onChange={onChangeUsername}
+        />
+      </>
+    )
+  }
+  
+  const onSubmitSuccess=(jwtToken)=>{
+    Cookies.set('jwt_token',jwtToken,{expires:30})
+    navigate('/')
+  }
+
+  const onSubmitFailure=(errorMsg)=>{
+    setCredentials((prevCredentials)=>({...prevCredentials,showSubmitError:true,errorMsg}))
+
+  }
+  const submitForm=async(event)=>{
+    event.preventDefault()
+    const userDetails=credentials
+    const url ="https://apis.ccbp.in/login"
+    const options={
+      method:'POST',
+      body:JSON.stringify(userDetails),
+    }
+    const response=await fetch(url,options)
+    const data=await response.json()
+    console.log(data)
+    if(response.ok){
+      onSubmitSuccess(data.jwt_token)
+    }
+    else{
+      onSubmitFailure(data.error_msg)
+    }
+
+    
+  }
+
+    return (
+      <div className="login-form-container">
+        <img
+          src="https://assets.ccbp.in/frontend/react-js/nxt-trendz-logo-img.png"
+          className="login-website-logo-mobile-image"
+          alt="website logo"
+        />
+        <img
+          src="https://assets.ccbp.in/frontend/react-js/nxt-trendz-login-img.png"
+          className="login-image"
+          alt="website login"
+        />
+        <form className="form-container" onSubmit={submitForm} >
+          <img
+            src="https://assets.ccbp.in/frontend/react-js/nxt-trendz-logo-img.png"
+            className="login-website-logo-desktop-image"
+            alt="website logo"
+          />
+          <div className="input-container">{renderUsernameField()}</div>
+          <div className="input-container">{renderPasswordField()}</div>
+          <button type="submit" className="login-button">
+            Login
+          </button>
+          {credentials.showSubmitError && <p className='error-message'>*{credentials.errorMsg}</p>}
+        </form>
+      </div>
+    )
+ 
+}
+
+export default LoginForm
